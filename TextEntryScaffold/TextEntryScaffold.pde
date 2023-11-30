@@ -13,10 +13,12 @@ float lettersExpectedTotal = 0; //a running total of the number of letters expec
 float errorsTotal = 0; //a running total of the number of errors (when hitting next)
 String currentPhrase = ""; //the current target phrase
 String currentTyped = ""; //what the user has typed so far
-final int DPIofYourDeviceScreen = 120; //you will need to look up the DPI or PPI of your device to make sure you get the right scale. Or play around with this value.
-final float sizeOfInputArea = DPIofYourDeviceScreen*1; //aka, 1.0 inches square!
+final float DPIofYourDeviceScreen = 108.78559; //you will need to look up the DPI or PPI of your device to make sure you get the right scale. Or play around with this value.
+final float sizeOfInputArea = DPIofYourDeviceScreen*2; //aka, 1.0 inches square!
 PImage watch;
 PImage finger;
+PFont fontSmall;
+PFont fontLarge;
 
 //Variables for my silly implementation. You can delete this:
 char currentLetter = 'a';
@@ -34,6 +36,8 @@ boolean isUpperCase = false;
 //You can modify anything in here. This is just a basic implementation.
 void setup()
 {
+  fontSmall = createFont("Arial", 9);
+  fontLarge = createFont("Arial", 16);
   //noCursor();
   watch = loadImage("watchhand3smaller.png");
   //finger = loadImage("pngeggSmaller.png"); //not using this
@@ -42,7 +46,7 @@ void setup()
   //Collections.shuffle(Arrays.asList(phrases), new Random(100)); //randomize the order of the phrases with seed 100; same order every time, useful for testing
  
   orientation(LANDSCAPE); //can also be PORTRAIT - sets orientation on android device
-  size(800, 800); //Sets the size of the app. You should modify this to your device's native size. Many phones today are 1080 wide by 1920 tall.
+  size(600, 800); //Sets the size of the app. You should modify this to your device's native size. Many phones today are 1080 wide by 1920 tall.
   textFont(createFont("Arial", 20)); //set the font to arial 24. Creating fonts is expensive, so make difference sizes once in setup, not draw
   noStroke(); //my code doesn't use any strokes
 }
@@ -75,18 +79,18 @@ void draw()
     textFont(createFont("Arial",16));
     fill(0);
     textAlign(CENTER);
-    text("Trials complete!",400,200); //output
-    text("Total time taken: " + (finishTime - startTime),400,220); //output
-    text("Total letters entered: " + lettersEnteredTotal,400,240); //output
-    text("Total letters expected: " + lettersExpectedTotal,400,260); //output
-    text("Total errors entered: " + errorsTotal,400,280); //output
+    text("Trials complete!",width/2,200); //output
+    text("Total time taken: " + (finishTime - startTime),width/2,220); //output
+    text("Total letters entered: " + lettersEnteredTotal,width/2,240); //output
+    text("Total letters expected: " + lettersExpectedTotal,width/2,260); //output
+    text("Total errors entered: " + errorsTotal,width/2,280); //output
     float wpm = (lettersEnteredTotal/5.0f)/((finishTime - startTime)/60000f); //FYI - 60K is number of milliseconds in minute
-    text("Raw WPM: " + wpm,400,300); //output
+    text("Raw WPM: " + wpm,width/2,300); //output
     float freebieErrors = lettersExpectedTotal*.05; //no penalty if errors are under 5% of chars
-    text("Freebie errors: " + nf(freebieErrors,1,3),400,320); //output
+    text("Freebie errors: " + nf(freebieErrors,1,3),width/2,320); //output
     float penalty = max(errorsTotal-freebieErrors, 0) * .5f;
-    text("Penalty: " + penalty,400,340);
-    text("WPM w/ penalty: " + (wpm-penalty),400,360); //yes, minus, because higher WPM is better
+    text("Penalty: " + penalty,width/2,340);
+    text("WPM w/ penalty: " + (wpm-penalty),width/2,360); //yes, minus, because higher WPM is better
     return;
   }
   
@@ -94,8 +98,8 @@ void draw()
   textFont(createFont("Arial",16));
   fill(100);
   rect(width/2-sizeOfInputArea/2, height/2-sizeOfInputArea/2, sizeOfInputArea, sizeOfInputArea); //input area should be 1" by 1"
-  
-
+  drawKeyboard();
+  textFont(fontLarge);
   if (startTime==0 & !mousePressed)
   {
     fill(128);
@@ -120,20 +124,99 @@ void draw()
 
     //draw very basic next button
     fill(255, 0, 0);
-    rect(600, 600, 200, 200); //draw next button
+    rect(400, 600, 200, 200); //draw next button
     fill(255);
     text("NEXT > ", 650, 650); //draw next label
-    drawKeyboard();
-    
+
+    //example design draw code
+    fill(255, 0, 0); //red button
+    rect(width/2-sizeOfInputArea/2, height/2-sizeOfInputArea/2+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2); //draw left red button
+    fill(0, 255, 0); //green button
+    rect(width/2-sizeOfInputArea/2+sizeOfInputArea/2, height/2-sizeOfInputArea/2+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2); //draw right green button
     textAlign(CENTER);
     fill(200);
-    text("" + currentTyped, width/2, height/2-sizeOfInputArea/4); //draw current letter
+    text("" + currentLetter, width/2, height/2-sizeOfInputArea/4); //draw current letter
+  }
+   fill(255, 40);
+   ellipse(mouseX, mouseY, 20, 20);
+  textAlign(CENTER);
+  fill(200);
+  text("" + currentTyped, width/2, height/2-sizeOfInputArea/3); //draw current letter
+  //drawFinger(); //no longer needed as we'll be deploying to an actual touschreen device
+  
+  if (isBackspacePressed && millis() - backspacePressedTime > longPressThreshold) {
+    int lastSpaceIndex = currentTyped.lastIndexOf(' ');
+    if (lastSpaceIndex != -1) {
+      currentTyped = currentTyped.substring(0, lastSpaceIndex + 1);
+    } else {
+      currentTyped = ""; 
+    }
+    isBackspacePressed = false; 
   }
  
- 
-  //drawFinger(); //no longer needed as we'll be deploying to an actual touschreen device
 }
 
+
+// Varaibles for keyboard drawing
+float keyboardWidth = sizeOfInputArea; 
+float keyboardHeight = 3*sizeOfInputArea/4;
+float keyWidth = keyboardWidth / 10 -4; 
+float keyHeight = keyboardHeight / 4 -4;
+char selectedKey = ' '; 
+boolean isUpperCase = false;
+String[] keys = {"QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM", "^     <"};
+float keyMargin = 2; 
+float cornerRadius = 5; 
+boolean isBackspacePressed = false;
+float backspacePressedTime = 0;
+float longPressThreshold = 600; 
+// variable for floating rect
+char lastPressedKey = ' ';
+float lastPressedKeyX = 0;
+float lastPressedKeyY = 0;
+boolean isKeyPressed = false;
+
+void drawKeyboard() {
+  textFont(fontSmall);
+  for (int row = 0; row < keys.length; row++) {
+    float rowWidth = keys[row].length() * (keyWidth + keyMargin);
+    float startX = width / 2 - rowWidth / 2; 
+    for (int col = 0; col < keys[row].length(); col++) {
+      float x = startX + col * (keyWidth+keyMargin);
+      float y = row * (keyHeight+keyMargin) +sizeOfInputArea/4+ height / 2 - sizeOfInputArea / 2;
+      
+      
+      if (mouseX >= x && mouseX <= x + keyWidth && mouseY >= y && mouseY <= y + keyHeight) {
+        fill(150); 
+      } else {
+        fill(200); 
+      }
+      
+      char keyChar = keys[row].charAt(col);
+      keyChar = isUpperCase ? Character.toUpperCase(keyChar) : Character.toLowerCase(keyChar);
+      if (row == 3 && keyChar == ' ') {
+        
+        float spaceWidth = 5 * (keyWidth + keyMargin) - keyMargin; 
+        rect(x, y, spaceWidth, keyHeight, cornerRadius);
+        col += 4;
+      } else {
+        rect(x, y, keyWidth, keyHeight, cornerRadius);
+      }
+      fill(0);
+      text(keyChar, x + keyWidth / 2, y + keyHeight / 2);
+    }
+  }
+  if (isKeyPressed) {
+    float popupWidth = keyWidth * 1.5;
+    float popupHeight = keyHeight * 1.5;
+    float popupX = lastPressedKeyX - (popupWidth - keyWidth) / 2;
+    float popupY = lastPressedKeyY - popupHeight - 10; 
+    fill(180);
+    rect(popupX, popupY, popupWidth, popupHeight, cornerRadius);
+    fill(0);
+    text(lastPressedKey, popupX + popupWidth / 2, popupY + popupHeight / 2);
+  }
+}
 //my terrible implementation you can entirely replace
 boolean didMouseClick(float x, float y, float w, float h) //simple function to do hit testing
 {
@@ -143,41 +226,36 @@ boolean didMouseClick(float x, float y, float w, float h) //simple function to d
 //my terrible implementation you can entirely replace
 void mousePressed()
 {
-  
+  if (didMouseClick(width/2-sizeOfInputArea/2, height/2-sizeOfInputArea/2+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2)) //check if click in left button
+  {
+    currentLetter --;
+    if (currentLetter<'_') //wrap around to z
+      currentLetter = 'z';
+  }
 
- 
+  if (didMouseClick(width/2-sizeOfInputArea/2+sizeOfInputArea/2, height/2-sizeOfInputArea/2+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2)) //check if click in right button
+  {
+    currentLetter ++;
+    if (currentLetter>'z') //wrap back to space (aka underscore)
+      currentLetter = '_';
+  }
+
+  if (didMouseClick(width/2-sizeOfInputArea/2, height/2-sizeOfInputArea/2, sizeOfInputArea, sizeOfInputArea/2)) //check if click occured in letter area
+  {
+    if (currentLetter=='_') //if underscore, consider that a space bar
+      currentTyped+=" ";
+    else if (currentLetter=='`' & currentTyped.length()>0) //if `, treat that as a delete command
+      currentTyped = currentTyped.substring(0, currentTyped.length()-1);
+    else if (currentLetter!='`') //if not any of the above cases, add the current letter to the typed string
+      currentTyped+=currentLetter;
+  }
 
   //You are allowed to have a next button outside the 1" area
-  if (didMouseClick(600, 600, 200, 200)) //check if click is in next button
+  if (didMouseClick(400, 600, 200, 200)) //check if click is in next button
   {
     nextTrial(); //if so, advance to next trial
   }
-  for (int row = 0; row < keys.length; row++) {
-    float rowWidth = keys[row].length() * keyWidth;
-    float startX = width / 2 - rowWidth / 2;
-    int startY = row * keyHeight + 40 + height / 2 - int(sizeOfInputArea) / 2;
-    if (mouseX >= startX && mouseX <= startX + rowWidth && mouseY >= startY && mouseY <= startY + keyHeight) {
-      int col = (int)((mouseX - startX) / keyWidth);
-      if (col < keys[row].length()) {
-        
-        char selectedKey = keys[row].charAt(col);
-        selectedKey = isUpperCase ? Character.toUpperCase(selectedKey) : Character.toLowerCase(selectedKey);
-        if (selectedKey == '^') {
-          isUpperCase = !isUpperCase;
-        } else if (selectedKey == '<') {
-          if (currentTyped.length() > 0) {
-            currentTyped = currentTyped.substring(0, currentTyped.length() - 1); // 删除
-          }
-        } else if (selectedKey == ' ') {
-          currentTyped += " "; 
-        } else {
-          currentTyped += selectedKey;
-        }
-      }
-    }
-  }
 }
-
 
 void nextTrial()
 {
@@ -248,7 +326,7 @@ void drawWatch()
   translate(width/2, height/2);
   scale(watchscale);
   imageMode(CENTER);
-  image(watch, 0, 0);
+  //image(watch, 0, 0);
   popMatrix();
 }
 
