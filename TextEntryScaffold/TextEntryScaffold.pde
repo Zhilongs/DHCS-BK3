@@ -62,6 +62,59 @@ void setup()
 
 //You can modify anything in here. This is just a basic implementation.
 
+String[] getPredictionsForWord(String wordPrefix) {
+    List<String> predictions = new ArrayList<>();
+    int count = 0;
+    for (String word : commonWords) {
+        if (word.startsWith(wordPrefix)) {
+            predictions.add(word);
+            count++;
+            if (count == 3) {
+                break; // 限制结果数量为3
+            }
+        }
+    }
+    return predictions.toArray(new String[0]);
+}
+String getPrediction(String prefix) {
+  String[] typedWords = prefix.split(" ");
+  String lastWord = typedWords.length > 0 ? typedWords[typedWords.length - 1] : "";
+
+  // Filter common words that start with the last typed word
+  String[] predictions = getPredictionsForWord(lastWord);
+
+  // Return the first prediction (you can customize this logic)
+  return predictions.length > 0 ? predictions[0] : "";
+}
+
+// Helper method to shuffle an array
+void shuffleArray(String[] array) {
+  Random random = new Random();
+  for (int i = array.length - 1; i > 0; i--) {
+    int index = random.nextInt(i + 1);
+    // Swap array[i] and array[index]
+    String temp = array[i];
+    array[i] = array[index];
+    array[index] = temp;
+  }
+}
+
+String getWordPrediction() {
+  String[] typedWords = currentTyped.split(" ");
+  String lastWord = typedWords.length > 0 ? typedWords[typedWords.length - 1] : "";
+
+  // Debugging: Print last word
+  System.out.println("Last Word: " + lastWord);
+
+  // Get a single word prediction based on the last typed word
+  String prediction = getPrediction(lastWord);
+
+  // Debugging: Print prediction
+  System.out.println("Prediction: " + prediction);
+
+  // Return the prediction
+  return prediction;
+}
 
 
 void draw()
@@ -72,18 +125,19 @@ void draw()
   {
     fill(0);
     textAlign(CENTER);
-    text("Trials complete!",400,200); //output
-    text("Total time taken: " + (finishTime - startTime),400,220); //output
-    text("Total letters entered: " + lettersEnteredTotal,400,240); //output
-    text("Total letters expected: " + lettersExpectedTotal,400,260); //output
-    text("Total errors entered: " + errorsTotal,400,280); //output
+    textSize(20);
+    text("Trials complete!",width/2,200); //output
+    text("Total time taken: " + (finishTime - startTime),width/2,230); //output
+    text("Total letters entered: " + lettersEnteredTotal,width/2,260); //output
+    text("Total letters expected: " + lettersExpectedTotal,width/2,290); //output
+    text("Total errors entered: " + errorsTotal,width/2,320); //output
     float wpm = (lettersEnteredTotal/5.0f)/((finishTime - startTime)/60000f); //FYI - 60K is number of milliseconds in minute
-    text("Raw WPM: " + wpm,400,300); //output
+    text("Raw WPM: " + wpm,width/2,350); //output
     float freebieErrors = lettersExpectedTotal*.05; //no penalty if errors are under 5% of chars
-    text("Freebie errors: " + nf(freebieErrors,1,3),400,320); //output
+    text("Freebie errors: " + nf(freebieErrors,1,3),width/2,380); //output
     float penalty = max(errorsTotal-freebieErrors, 0) * .5f;
-    text("Penalty: " + penalty,400,340);
-    text("WPM w/ penalty: " + (wpm-penalty),400,360); //yes, minus, because higher WPM is better
+    text("Penalty: " + penalty,width/2,410);
+    text("WPM w/ penalty: " + (wpm-penalty),width/2,440); //yes, minus, because higher WPM is better
     return;
   }
   
