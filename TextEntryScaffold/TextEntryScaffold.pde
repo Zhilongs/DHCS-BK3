@@ -13,8 +13,8 @@ float lettersExpectedTotal = 0; //a running total of the number of letters expec
 float errorsTotal = 0; //a running total of the number of errors (when hitting next)
 String currentPhrase = ""; //the current target phrase
 String currentTyped = ""; //what the user has typed so far
-final float DPIofYourDeviceScreen = 108.78559; //you will need to look up the DPI or PPI of your device to make sure you get the right scale. Or play around with this value.
-final float sizeOfInputArea = DPIofYourDeviceScreen*2; //aka, 1.0 inches square!
+final float DPIofYourDeviceScreen =222.5; //you will need to look up the DPI or PPI of your device to make sure you get the right scale. Or play around with this value.
+final float sizeOfInputArea = DPIofYourDeviceScreen; //aka, 1.0 inches square!
 PImage watch;
 PImage finger;
 PFont fontSmall;
@@ -24,13 +24,6 @@ PFont fontLarge;
 char currentLetter = 'a';
 
 // Vairables for keyboard
-int keyboardWidth = 120;
-int keyboardHeight = 60;
-int keyWidth = keyboardWidth / 10;
-int keyHeight = keyboardHeight/3;
-String[] keys = {"QWERTYUIOP","ASDFGHJKL","ZXCVBNM","^     <-"};
-char selectedKey = ' ';
-boolean isUpperCase = false;
 
 
 //You can modify anything in here. This is just a basic implementation.
@@ -46,28 +39,11 @@ void setup()
   //Collections.shuffle(Arrays.asList(phrases), new Random(100)); //randomize the order of the phrases with seed 100; same order every time, useful for testing
  
   orientation(LANDSCAPE); //can also be PORTRAIT - sets orientation on android device
-  size(600, 800); //Sets the size of the app. You should modify this to your device's native size. Many phones today are 1080 wide by 1920 tall.
+  size(1280, 720); //Sets the size of the app. You should modify this to your device's native size. Many phones today are 1080 wide by 1920 tall.
   textFont(createFont("Arial", 20)); //set the font to arial 24. Creating fonts is expensive, so make difference sizes once in setup, not draw
   noStroke(); //my code doesn't use any strokes
 }
 
-void drawKeyboard(){
- for (int row = 0; row < keys.length; row++) {
-    int rowWidth = keys[row].length() * keyWidth;
-    int startX = width / 2 - rowWidth / 2;
-    for (int col = 0; col < keys[row].length(); col++) {
-      int x = startX + col * keyWidth;
-      int y = row * keyHeight + 40 + height / 2 - int(sizeOfInputArea) / 2;
-      fill(200);
-      rect(x, y, keyWidth, keyHeight);
-      fill(0);
-      textFont(createFont("Arial", 9));
-      char keyChar = keys[row].charAt(col);
-      keyChar = isUpperCase ? Character.toUpperCase(keyChar) : Character.toLowerCase(keyChar);
-      text(keyChar, x + keyWidth / 2, y + keyHeight / 2);
-    }
-  }
-}
 //You can modify anything in here. This is just a basic implementation.
 void draw()
 {
@@ -124,25 +100,17 @@ void draw()
 
     //draw very basic next button
     fill(255, 0, 0);
-    rect(400, 600, 200, 200); //draw next button
+    rect(1080, 520, 200, 200); //draw next button
     fill(255);
-    text("NEXT > ", 650, 650); //draw next label
+    text("NEXT > ", 1180, 620); //draw next label
 
     //example design draw code
-    fill(255, 0, 0); //red button
-    rect(width/2-sizeOfInputArea/2, height/2-sizeOfInputArea/2+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2); //draw left red button
-    fill(0, 255, 0); //green button
-    rect(width/2-sizeOfInputArea/2+sizeOfInputArea/2, height/2-sizeOfInputArea/2+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2); //draw right green button
-    textAlign(CENTER);
-    fill(200);
-    text("" + currentLetter, width/2, height/2-sizeOfInputArea/4); //draw current letter
   }
    fill(255, 40);
    ellipse(mouseX, mouseY, 20, 20);
   textAlign(CENTER);
   fill(200);
   text("" + currentTyped, width/2, height/2-sizeOfInputArea/3); //draw current letter
-  //drawFinger(); //no longer needed as we'll be deploying to an actual touschreen device
   
   if (isBackspacePressed && millis() - backspacePressedTime > longPressThreshold) {
     int lastSpaceIndex = currentTyped.lastIndexOf(' ');
@@ -184,8 +152,6 @@ void drawKeyboard() {
     for (int col = 0; col < keys[row].length(); col++) {
       float x = startX + col * (keyWidth+keyMargin);
       float y = row * (keyHeight+keyMargin) +sizeOfInputArea/4+ height / 2 - sizeOfInputArea / 2;
-      
-      
       if (mouseX >= x && mouseX <= x + keyWidth && mouseY >= y && mouseY <= y + keyHeight) {
         fill(150); 
       } else {
@@ -208,12 +174,13 @@ void drawKeyboard() {
   }
   if (isKeyPressed) {
     float popupWidth = keyWidth * 1.5;
-    float popupHeight = keyHeight * 1.5;
+    float popupHeight = keyHeight * 1.2;
     float popupX = lastPressedKeyX - (popupWidth - keyWidth) / 2;
     float popupY = lastPressedKeyY - popupHeight - 10; 
     fill(180);
     rect(popupX, popupY, popupWidth, popupHeight, cornerRadius);
     fill(0);
+    textSize(20);
     text(lastPressedKey, popupX + popupWidth / 2, popupY + popupHeight / 2);
   }
 }
@@ -226,37 +193,52 @@ boolean didMouseClick(float x, float y, float w, float h) //simple function to d
 //my terrible implementation you can entirely replace
 void mousePressed()
 {
-  if (didMouseClick(width/2-sizeOfInputArea/2, height/2-sizeOfInputArea/2+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2)) //check if click in left button
-  {
-    currentLetter --;
-    if (currentLetter<'_') //wrap around to z
-      currentLetter = 'z';
-  }
+  
+  for (int row = 0; row < keys.length; row++) {
+    float rowWidth = keys[row].length() * (keyWidth + keyMargin);
+    float startX = width / 2 - rowWidth / 2;
 
-  if (didMouseClick(width/2-sizeOfInputArea/2+sizeOfInputArea/2, height/2-sizeOfInputArea/2+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2)) //check if click in right button
-  {
-    currentLetter ++;
-    if (currentLetter>'z') //wrap back to space (aka underscore)
-      currentLetter = '_';
-  }
+    // Iterate through each key in the row
+    for (int col = 0; col < keys[row].length(); col++) {
+      float x = startX + col * (keyWidth + keyMargin);
+      float y = row * (keyHeight + keyMargin) + sizeOfInputArea / 4 + height / 2 - sizeOfInputArea / 2;
 
-  if (didMouseClick(width/2-sizeOfInputArea/2, height/2-sizeOfInputArea/2, sizeOfInputArea, sizeOfInputArea/2)) //check if click occured in letter area
-  {
-    if (currentLetter=='_') //if underscore, consider that a space bar
-      currentTyped+=" ";
-    else if (currentLetter=='`' & currentTyped.length()>0) //if `, treat that as a delete command
-      currentTyped = currentTyped.substring(0, currentTyped.length()-1);
-    else if (currentLetter!='`') //if not any of the above cases, add the current letter to the typed string
-      currentTyped+=currentLetter;
+      // Check if the mouse click is within the key's bounds
+      if (mouseX >= x && mouseX <= x + keyWidth && mouseY >= y && mouseY <= y + keyHeight) {
+        char keyChar = keys[row].charAt(col);
+        keyChar = isUpperCase ? Character.toUpperCase(keyChar) : Character.toLowerCase(keyChar);
+
+        // Handle special keys like space, backspace, etc.
+        if (keyChar == ' ') {
+          currentTyped += ' ';
+        } else if (keyChar == '<') {
+          if(currentTyped.length()>0){
+            currentTyped = currentTyped.substring(0, currentTyped.length() - 1);
+          }
+        } else if (keyChar == '^') {
+          isUpperCase = !isUpperCase;
+        } else {
+          // Regular key logic
+          lastPressedKey = keyChar;
+          lastPressedKeyX = x;
+          lastPressedKeyY = y;
+          isKeyPressed = true;
+          // Add the character to the currentTyped string
+          currentTyped += keyChar;
+        }
+      }
+    }
   }
 
   //You are allowed to have a next button outside the 1" area
-  if (didMouseClick(400, 600, 200, 200)) //check if click is in next button
+  if (didMouseClick(1080, 520, 200, 200)) //check if click is in next button
   {
     nextTrial(); //if so, advance to next trial
   }
 }
-
+void mouseReleased(){
+  isKeyPressed = false;
+}
 void nextTrial()
 {
   if (currTrialNum >= totalTrialNum) //check to see if experiment is done
