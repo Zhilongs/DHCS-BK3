@@ -13,8 +13,8 @@ float lettersExpectedTotal = 0; //a running total of the number of letters expec
 float errorsTotal = 0; //a running total of the number of errors (when hitting next)
 String currentPhrase = ""; //the current target phrase
 String currentTyped = ""; //what the user has typed so far
-final float DPIofYourDeviceScreen = 120; //you will need to look up the DPI or PPI of your device to make sure you get the right scale. Or play around with this value.
-final float sizeOfInputArea = DPIofYourDeviceScreen*3; //aka, 1.0 inches square!
+final float DPIofYourDeviceScreen = 222.5; //you will need to look up the DPI or PPI of your device to make sure you get the right scale. Or play around with this value.
+final float sizeOfInputArea = DPIofYourDeviceScreen*1.2; //aka, 1.0 inches square!
 PImage watch;
 PImage finger;
 PFont fontSmall;
@@ -26,8 +26,8 @@ char currentLetter = 'a';
 //You can modify anything in here. This is just a basic implementation.
 void setup()
 {
-  fontSmall = createFont("Arial", 9);
-  fontLarge = createFont("Arial", 16);
+  fontSmall = createFont("Arial", 15);
+  fontLarge = createFont("Arial", 20);
   //noCursor();
   watch = loadImage("watchhand3smaller.png");
   //finger = loadImage("pngeggSmaller.png"); //not using this
@@ -36,7 +36,7 @@ void setup()
   //Collections.shuffle(Arrays.asList(phrases), new Random(100)); //randomize the order of the phrases with seed 100; same order every time, useful for testing
 
   orientation(LANDSCAPE); //can also be PORTRAIT - sets orientation on android device
-  size(600, 800); //Sets the size of the app. You should modify this to your device's native size. Many phones today are 1080 wide by 1920 tall.
+  size(1280,720 ); //Sets the size of the app. You should modify this to your device's native size. Many phones today are 1080 wide by 1920 tall.
   textFont(createFont("Arial", 20)); //set the font to arial 24. Creating fonts is expensive, so make difference sizes once in setup, not draw
   noStroke(); //my code doesn't use any strokes
 }
@@ -95,7 +95,7 @@ void draw()
 
     //draw very basic next button
     fill(255, 0, 0);
-    rect(400, 600, 200, 200); //draw next button
+    rect(1080, 520, 200, 200); //draw next button
     fill(255);
     text("NEXT > ", 450, 650); //draw next label
   }
@@ -104,6 +104,8 @@ void draw()
   textAlign(CENTER);
   fill(200);
   text("" + currentTyped, width/2, height/2-sizeOfInputArea/3); //draw current letter
+  
+  
   //drawFinger(); //no longer needed as we'll be deploying to an actual touschreen device
 
   if (isBackspacePressed && millis() - backspacePressedTime > longPressThreshold) {
@@ -156,7 +158,7 @@ void drawKeyboard() {
       buttonX+buttonWidth/4, buttonY+buttonHeight);
     fill(0);
     text(keys[0].substring(0, 4), buttonX+buttonWidth/2, buttonY+buttonHeight/2);
-    text(keys[0].substring(4, 7), buttonX+buttonWidth/2, buttonY+buttonHeight/2+10);
+    text(keys[0].substring(4, 7), buttonX+buttonWidth/2, buttonY+buttonHeight/2+15);
 
     // second button
     fill(200);
@@ -170,7 +172,7 @@ void drawKeyboard() {
       buttonX-6, buttonY+keyboardHeight/3);
     fill(0);
     text(keys[1].substring(0, 2), startX, buttonY+buttonHeight/2);
-    text(keys[1].substring(2, 5), startX, buttonY+buttonHeight/2+10);
+    text(keys[1].substring(2, 5), startX, buttonY+buttonHeight/2+15);
 
     // third button
     fill(200);
@@ -186,7 +188,7 @@ void drawKeyboard() {
       buttonX-buttonWidth/4, buttonY+buttonHeight);
     fill(0);
     text(keys[2].substring(0, 4), buttonX-buttonWidth/2, buttonY+buttonHeight/2);
-    text(keys[2].substring(4, 7), buttonX-buttonWidth/2, buttonY+buttonHeight/2+10);
+    text(keys[2].substring(4, 7), buttonX-buttonWidth/2, buttonY+buttonHeight/2+15);
 
 
     // fourth button
@@ -211,10 +213,10 @@ void drawKeyboard() {
     
     //blankspace
     fill(200);
-    rect(width/2-keyboardWidth/2+2*keyMargin+keyboardWidth/5,buttonY+2*keyboardHeight/5-2*keyMargin,60,buttonHeight,cornerRadius);
+    rect(width/2-keyboardWidth/2+2*keyMargin+keyboardWidth/5,buttonY+2*keyboardHeight/5-2*keyMargin,2*keyboardWidth/5,buttonHeight,cornerRadius);
     
     //delete
-    rect(width/2+keyboardWidth/4+keyMargin,buttonY+2*keyboardHeight/5-2*keyMargin,20,buttonHeight,cornerRadius);
+    rect(width/2+keyboardWidth/4+keyMargin,buttonY+2*keyboardHeight/5-2*keyMargin,keyboardWidth/6,buttonHeight,cornerRadius);
     fill(0);
     text("<",width/2+keyboardWidth/4+keyMargin+10,buttonY+6*keyboardHeight/10-3*keyMargin);
   } else if (isKeyPressed && keySelected == 0) {
@@ -287,7 +289,7 @@ boolean didMouseClick(float x, float y, float w, float h) //simple function to d
 {
   return (mouseX > x && mouseX<x+w && mouseY>y && mouseY<y+h); //check to see if it is in button bounds
 }
-
+int page = 0;
 //my terrible implementation you can entirely replace
 void mousePressed()
 {
@@ -297,35 +299,66 @@ void mousePressed()
   float keyWidth = keyboardWidth / 5;
   float keyHeight = keyboardWidth / 5;
   if (!isKeyPressed) {
-    // 检测五个大区域中的哪一个被点击
-    if (mouseY > startY && mouseY < startY +40) {
-      if (mouseX > startX - keyboardWidth / 2 && mouseX < startX - keyboardWidth / 2+48) {
-        keySelected = 0;
-      } else if (mouseX > startX - keyboardWidth/2+48 && mouseX < startX - keyboardWidth /2 + 72) {
-        keySelected = 1;
-      } else if (mouseX > startX - keyboardWidth/2+72 && mouseX < startX - keyboardWidth /2 + 120) {
-        keySelected = 2;
-      }
-      isKeyPressed = true;
+    // 计算第一、二、三个按钮的位置和大小
+    float commonButtonWidth = keyboardWidth / 3;
+    float commonButtonHeight = keyboardHeight / 3;
+    float commonButtonX = startX - keyboardWidth / 2 + keyMargin;
+    float commonButtonY = startY + keyMargin;
+
+    // 检查是否点击了第一、二、三个按钮
+    for (int i = 0; i < 3; i++) {
+        if (mouseX >= commonButtonX + i * commonButtonWidth && mouseX <= commonButtonX + (i + 1) * commonButtonWidth &&
+            mouseY >= commonButtonY && mouseY <= commonButtonY + commonButtonHeight) {
+            keySelected = i;
+            isKeyPressed = true;
+            page = 1;
+            break;
+        }
     }
-    if (mouseY > startY+40 && mouseY < startY + 60) {
-      if (mouseX > startX - keyboardWidth / 2 && mouseX < startX - keyboardWidth / 2+60) {
-        keySelected = 3;
-      } else if (mouseX > startX - keyboardWidth/2+60 && mouseX < startX + keyboardWidth /2 + 120) {
-        keySelected = 4;
-      }
-      isKeyPressed = true;
+
+    // 计算第四、五个按钮的位置和大小
+    float specialButtonWidth = keyboardWidth / 2;
+    float specialButtonHeight = keyboardHeight / 4;
+    float specialButtonY = startY + keyboardHeight / 3 + 2 * keyMargin;
+
+    // 检查是否点击了第四、五个按钮
+    for (int i = 0; i < 2; i++) {
+        float specialButtonX = startX - keyboardWidth / 2 + i * specialButtonWidth + keyMargin;
+        if (mouseX >= specialButtonX && mouseX <= specialButtonX + specialButtonWidth &&
+            mouseY >= specialButtonY && mouseY <= specialButtonY + specialButtonHeight) {
+            keySelected = 3 + i;
+            isKeyPressed = true;
+            break;
+        }
     }
-    if (mouseY > startY+60&& mouseY < startY + 90) {
-      if (mouseX > startX - keyboardWidth / 2 +30 && mouseX < startX - keyboardWidth / 2+90) {
+   // 空格键的位置和大小
+    float spaceKeyX = width / 2 - keyboardWidth / 2 + 2 * keyMargin + keyboardWidth / 5;
+    float spaceKeyY = specialButtonY + 2 * keyboardHeight / 5 - 2 * keyMargin;
+    float spaceKeyWidth = 2 * keyboardWidth / 5;
+    float spaceKeyHeight = specialButtonHeight;
+
+    // 删除键的位置和大小
+    float deleteKeyX = width / 2 + keyboardWidth / 4 + keyMargin;
+    float deleteKeyY = specialButtonY + 2 * keyboardHeight / 5 - 2 * keyMargin;
+    float deleteKeyWidth = keyboardWidth / 6;
+    float deleteKeyHeight = specialButtonHeight;
+
+    // 检查是否点击了空格键
+    if (mouseX >= spaceKeyX && mouseX <= spaceKeyX + spaceKeyWidth &&
+        mouseY >= spaceKeyY && mouseY <= spaceKeyY + spaceKeyHeight) {
         currentTyped += " ";
-      }
-      if (mouseX > startX - keyboardWidth / 2 +90 && mouseX < startX - keyboardWidth / 2+120) {
-         if (currentTyped.length() > 0) {
-          currentTyped = currentTyped.substring(0, currentTyped.length() - 1);
-          }
-      }
     }
+
+    // 检查是否点击了删除键
+    if (mouseX >= deleteKeyX && mouseX <= deleteKeyX + deleteKeyWidth &&
+        mouseY >= deleteKeyY && mouseY <= deleteKeyY + deleteKeyHeight) {
+        if (currentTyped.length() > 0) {
+            currentTyped = currentTyped.substring(0, currentTyped.length() - 1);
+        }
+    }
+    if (isKeyPressed) {
+            return; // 阻止进一步的处理，直到下次点击
+        }
   }
   if (isKeyPressed) {
     if (mouseX >= startX-keyboardWidth/2 && mouseX <= startX+keyboardWidth/2 && mouseY >= startY +sizeOfInputArea/2+10 && mouseY <= startY +3*sizeOfInputArea/4) {
@@ -350,11 +383,10 @@ void mousePressed()
           char selectedChar = keys[0].charAt(i);
           selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
           currentTyped += selectedChar;
-          
         }
       }
     }
-    if ( keySelected == 1) {
+    if ( isKeyPressed&&keySelected == 1) {
       for (int i = 0; i < 2; i++) {
         float keyX = startX + i * (keyWidth + keyMargin) - keyWidth;
         float keyY = height / 2 - keyHeight;
@@ -398,7 +430,7 @@ void mousePressed()
         }
       }
     }
-    if ( keySelected == 3) {
+    if (keySelected == 3) {
       for (int i = 0; i < keys[3].length(); i++) {
         float keyX = startX - keyboardWidth / 2 + i * (keyWidth + keyMargin) + 2 * keyMargin;
         float keyY = height / 2 + keyHeight / 2;
@@ -410,7 +442,7 @@ void mousePressed()
         }
       }
     }
-    if ( keySelected == 4) {
+    if (keySelected == 4) {
       for (int i = 0; i < keys[4].length(); i++) {
         float keyX = startX - keyboardWidth / 2 + i * (keyWidth + keyMargin) + 2 * keyMargin;
         float keyY = height / 2 + keyHeight / 2;
@@ -429,7 +461,7 @@ void mousePressed()
 
 
   //You are allowed to have a next button outside the 1" area
-  if (didMouseClick(400, 600, 200, 200)) //check if click is in next button
+  if (didMouseClick(1080, 520, 200, 200)) //check if click is in next button
   {
     nextTrial(); //if so, advance to next trial
   }
