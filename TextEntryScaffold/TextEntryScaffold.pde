@@ -62,51 +62,6 @@ void setup()
 
 //You can modify anything in here. This is just a basic implementation.
 
-String[] getPredictionsForWord(String wordPrefix) {
-    // Filter common words that start with the given word prefix
-    String[] filteredWords = Arrays.stream(commonWords)
-            .filter(word -> word.startsWith(wordPrefix))
-            .toArray(String[]::new);
-
-    // Return a limited number of predictions (you can customize this number)
-    return Arrays.copyOf(filteredWords, Math.min(filteredWords.length, 3));
-}
-
-
-String getPrediction(String prefix) {
-    String[] typedWords = prefix.split(" ");
-    String lastWord = typedWords.length > 0 ? typedWords[typedWords.length - 1] : "";
-
-    // Filter common words that start with the last typed word
-    String[] predictions = getPredictionsForWord(lastWord);
-
-    // Return the first prediction (you can customize this logic)
-    return predictions.length > 0 ? predictions[0] : "";
-}
-
-// Helper method to shuffle an array
-void shuffleArray(String[] array) {
-    Random random = new Random();
-    for (int i = array.length - 1; i > 0; i--) {
-        int index = random.nextInt(i + 1);
-        // Swap array[i] and array[index]
-        String temp = array[i];
-        array[i] = array[index];
-        array[index] = temp;
-    }
-}
-
-String getWordPrediction() {
-    String[] typedWords = currentTyped.split(" ");
-    String lastWord = typedWords.length > 0 ? typedWords[typedWords.length - 1] : "";
-
-    // Get a single word prediction based on the last typed word
-    String prediction = getPrediction(lastWord);
-
-    
-    return prediction;
-}
-
 
 
 void draw()
@@ -203,7 +158,7 @@ void draw()
   // Draw the virtual keyboard
   //fill(128);
   textSize(14);
-  text(getPrediction(currentTyped), width/2, keyboardY-20);
+  text(currentTyped, width/2, keyboardY-20);
   
   //End of draw function
   
@@ -248,19 +203,7 @@ void mousePressed()
     if(currentTyped.length()!=0){
     currentTyped=currentTyped.substring(0,currentTyped.length()-1);
     }
-  }else if(keyboardLayout[row][col]==" "){
-    String prediction = getWordPrediction();
-        if (!prediction.isEmpty()) {
-            String[] typedWords = currentTyped.split(" ");
-            if (typedWords.length > 0) {
-                String lastTypedWord = typedWords[typedWords.length - 1];
-                int commonLength = commonPrefixLength(lastTypedWord, prediction);
-                String remaining = prediction.substring(commonLength);
-                currentTyped += remaining + " ";
-            } else {
-                currentTyped += prediction + " ";
-            }
-        }
+
   }else if(keyboardLayout[row][col]=="_"){
     currentTyped+=' ';
   }else{
