@@ -14,7 +14,7 @@ float errorsTotal = 0; //a running total of the number of errors (when hitting n
 String currentPhrase = ""; //the current target phrase
 String currentTyped = ""; //what the user has typed so far
 final float DPIofYourDeviceScreen = 120; //you will need to look up the DPI or PPI of your device to make sure you get the right scale. Or play around with this value.
-final float sizeOfInputArea = DPIofYourDeviceScreen*1; //aka, 1.0 inches square!
+final float sizeOfInputArea = DPIofYourDeviceScreen*3; //aka, 1.0 inches square!
 PImage watch;
 PImage finger;
 PFont fontSmall;
@@ -208,6 +208,15 @@ void drawKeyboard() {
     rect(buttonX, buttonY, buttonWidth-2*keyMargin, buttonHeight, cornerRadius);
     fill(0);
     text(keys[4], buttonX+buttonWidth/2-keyMargin, buttonY+buttonHeight/2);
+    
+    //blankspace
+    fill(200);
+    rect(width/2-keyboardWidth/2+2*keyMargin+keyboardWidth/5,buttonY+2*keyboardHeight/5-2*keyMargin,60,buttonHeight,cornerRadius);
+    
+    //delete
+    rect(width/2+keyboardWidth/4+keyMargin,buttonY+2*keyboardHeight/5-2*keyMargin,20,buttonHeight,cornerRadius);
+    fill(0);
+    text("<",width/2+keyboardWidth/4+keyMargin+10,buttonY+6*keyboardHeight/10-3*keyMargin);
   } else if (isKeyPressed && keySelected == 0) {
     float keyWidth = keyboardWidth/5;
     float keyHeight = keyboardWidth/5;
@@ -299,13 +308,23 @@ void mousePressed()
       }
       isKeyPressed = true;
     }
-    if (mouseY > startY+40 && mouseY < startY + 84) {
+    if (mouseY > startY+40 && mouseY < startY + 60) {
       if (mouseX > startX - keyboardWidth / 2 && mouseX < startX - keyboardWidth / 2+60) {
         keySelected = 3;
       } else if (mouseX > startX - keyboardWidth/2+60 && mouseX < startX + keyboardWidth /2 + 120) {
         keySelected = 4;
       }
       isKeyPressed = true;
+    }
+    if (mouseY > startY+60&& mouseY < startY + 90) {
+      if (mouseX > startX - keyboardWidth / 2 +30 && mouseX < startX - keyboardWidth / 2+90) {
+        currentTyped += " ";
+      }
+      if (mouseX > startX - keyboardWidth / 2 +90 && mouseX < startX - keyboardWidth / 2+120) {
+         if (currentTyped.length() > 0) {
+          currentTyped = currentTyped.substring(0, currentTyped.length() - 1);
+          }
+      }
     }
   }
   if (isKeyPressed) {
@@ -321,6 +340,7 @@ void mousePressed()
           char selectedChar = keys[0].charAt(i);
           selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
           currentTyped += selectedChar;
+          
         }
       }
       for (int i = 4; i < 7; i++) {
@@ -330,6 +350,7 @@ void mousePressed()
           char selectedChar = keys[0].charAt(i);
           selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
           currentTyped += selectedChar;
+          
         }
       }
     }
@@ -341,6 +362,7 @@ void mousePressed()
           char selectedChar = keys[1].charAt(i);
           selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
           currentTyped += selectedChar;
+          
         }
       }
       for (int i = 2; i < 5; i++) {
@@ -350,6 +372,7 @@ void mousePressed()
           char selectedChar = keys[1].charAt(i);
           selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
           currentTyped += selectedChar;
+          
         }
       }
     }
@@ -361,6 +384,7 @@ void mousePressed()
           char selectedChar = keys[2].charAt(i);
           selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
           currentTyped += selectedChar;
+          
         }
       }
       for (int i = 4; i < 7; i++) {
@@ -370,6 +394,7 @@ void mousePressed()
           char selectedChar = keys[2].charAt(i);
           selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
           currentTyped += selectedChar;
+          
         }
       }
     }
@@ -381,6 +406,7 @@ void mousePressed()
           char selectedChar = keys[3].charAt(i);
           selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
           currentTyped += selectedChar;
+          
         }
       }
     }
@@ -393,10 +419,12 @@ void mousePressed()
           char selectedChar = keys[4].charAt(i);
           selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
           currentTyped += selectedChar;
+          
         }
       }
     }
-  }
+ }
+ 
 
 
 
