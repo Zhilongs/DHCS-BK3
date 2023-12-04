@@ -1,7 +1,7 @@
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
-
+import java.util.List;
 String[] phrases; //contains all of the phrases
 int totalTrialNum = 2; //the total number of phrases to be tested - set this low for testing. Might be ~10 for the real bakeoff!
 int currTrialNum = 0; // the current trial number (indexes into trials array above)
@@ -14,63 +14,129 @@ float errorsTotal = 0; //a running total of the number of errors (when hitting n
 String currentPhrase = ""; //the current target phrase
 String currentTyped = ""; //what the user has typed so far
 final float DPIofYourDeviceScreen = 222.5; //you will need to look up the DPI or PPI of your device to make sure you get the right scale. Or play around with this value.
-final float sizeOfInputArea = DPIofYourDeviceScreen*1.2; //aka, 1.0 inches square!
+final float sizeOfInputArea = DPIofYourDeviceScreen*1; //aka, 1.0 inches square!
 PImage watch;
 PImage finger;
-PFont fontSmall;
-PFont fontLarge;
+String[][] keyboardLayoutLeft = {
+  {"X"," "," "," "," ","X"},
+  {"Q", "W", "E", "R", "T",">"},
+  {"_","A", "S", "D", "F",">"},
+  {"_","_","Z", "X", "C",">"}
+};
+String[][] keyboardLayoutRight = {
+  {"X"," "," "," "," ","X"},
+  {"<","Y", "U", "I", "O", "P"},
+  {"<","G","H", "J", "K", "L"},
+  {"<","V","B","N", "M", "_"}
+};
+boolean left=false;
+float buttonWidth;
+float buttonHeight;
+float keyboardX;
+float keyboardY;
+String[][] keyboardLayout;
+String[] commonWords = {"hello", "world", "java", "programming", "example", "keyboard", "feature", "testing", "application", "prediction"};
+
 
 //Variables for my silly implementation. You can delete this:
 char currentLetter = 'a';
 
 //You can modify anything in here. This is just a basic implementation.
 void setup()
-{
-  fontSmall = createFont("Arial", 15);
-  fontLarge = createFont("Arial", 20);
-  //noCursor();
-  watch = loadImage("watchhand3smaller.png");
-  //finger = loadImage("pngeggSmaller.png"); //not using this
+{  
+  watch = loadImage("watchhand3smaller.png");  //finger = loadImage("pngeggSmaller.png"); //not using this
   phrases = loadStrings("phrases2.txt"); //load the phrase set into memory
-  Collections.shuffle(Arrays.asList(phrases), new Random()); //randomize the order of the phrases with no seed
-  //Collections.shuffle(Arrays.asList(phrases), new Random(100)); //randomize the order of the phrases with seed 100; same order every time, useful for testing
-
-  orientation(LANDSCAPE); //can also be PORTRAIT - sets orientation on android device
-  size(1280,720 ); //Sets the size of the app. You should modify this to your device's native size. Many phones today are 1080 wide by 1920 tall.
-  textFont(createFont("Arial", 20)); //set the font to arial 24. Creating fonts is expensive, so make difference sizes once in setup, not draw
+  Collections.shuffle(Arrays.asList(phrases), new Random()); //randomize the order of the phrases with no seed  //Collections.shuffle(Arrays.asList(phrases), new Random(100)); //randomize the order of the phrases with seed 100; same order every time, useful for testing
+ 
+  orientation(LANDSCAPE); 
+  size(1280, 720); 
+  textFont(createFont("Arial", 20)); 
   noStroke(); //my code doesn't use any strokes
+  
+  //set up for keyboard
+  buttonWidth = width / 39;
+  buttonHeight = height / 25;
+  keyboardX = width / 2 - 9-buttonWidth * 5 / 2;
+  keyboardY = height / 2-110 + buttonHeight * 1.5;
 }
 
 //You can modify anything in here. This is just a basic implementation.
+
+String[] getPredictionsForWord(String wordPrefix) {
+    // Filter common words that start with the given word prefix
+    String[] filteredWords = Arrays.stream(commonWords)
+            .filter(word -> word.startsWith(wordPrefix))
+            .toArray(String[]::new);
+
+    // Return a limited number of predictions (you can customize this number)
+    return Arrays.copyOf(filteredWords, Math.min(filteredWords.length, 3));
+}
+
+
+String getPrediction(String prefix) {
+    String[] typedWords = prefix.split(" ");
+    String lastWord = typedWords.length > 0 ? typedWords[typedWords.length - 1] : "";
+
+    // Filter common words that start with the last typed word
+    String[] predictions = getPredictionsForWord(lastWord);
+
+    // Return the first prediction (you can customize this logic)
+    return predictions.length > 0 ? predictions[0] : "";
+}
+
+// Helper method to shuffle an array
+void shuffleArray(String[] array) {
+    Random random = new Random();
+    for (int i = array.length - 1; i > 0; i--) {
+        int index = random.nextInt(i + 1);
+        // Swap array[i] and array[index]
+        String temp = array[i];
+        array[i] = array[index];
+        array[index] = temp;
+    }
+}
+
+String getWordPrediction() {
+    String[] typedWords = currentTyped.split(" ");
+    String lastWord = typedWords.length > 0 ? typedWords[typedWords.length - 1] : "";
+
+    // Get a single word prediction based on the last typed word
+    String prediction = getPrediction(lastWord);
+
+    
+    return prediction;
+}
+
+
+
 void draw()
 {
   background(255); //clear background
-
-  //check to see if the user finished. You can't change the score computation.
+   //check to see if the user finished. You can't change the score computation.
   if (finishTime!=0)
   {
     fill(0);
     textAlign(CENTER);
-    text("Trials complete!", width/2, 200); //output
-    text("Total time taken: " + (finishTime - startTime), width/2, 220); //output
-    text("Total letters entered: " + lettersEnteredTotal, width/2, 240); //output
-    text("Total letters expected: " + lettersExpectedTotal, width/2, 260); //output
-    text("Total errors entered: " + errorsTotal, width/2, 280); //output
+    text("Trials complete!",400,200); //output
+    text("Total time taken: " + (finishTime - startTime),400,220); //output
+    text("Total letters entered: " + lettersEnteredTotal,400,240); //output
+    text("Total letters expected: " + lettersExpectedTotal,400,260); //output
+    text("Total errors entered: " + errorsTotal,400,280); //output
     float wpm = (lettersEnteredTotal/5.0f)/((finishTime - startTime)/60000f); //FYI - 60K is number of milliseconds in minute
-    text("Raw WPM: " + wpm, width/2, 300); //output
+    text("Raw WPM: " + wpm,400,300); //output
     float freebieErrors = lettersExpectedTotal*.05; //no penalty if errors are under 5% of chars
-    text("Freebie errors: " + nf(freebieErrors, 1, 3), width/2, 320); //output
+    text("Freebie errors: " + nf(freebieErrors,1,3),400,320); //output
     float penalty = max(errorsTotal-freebieErrors, 0) * .5f;
-    text("Penalty: " + penalty, width/2, 340);
-    text("WPM w/ penalty: " + (wpm-penalty), width/2, 360); //yes, minus, because higher WPM is better
+    text("Penalty: " + penalty,400,340);
+    text("WPM w/ penalty: " + (wpm-penalty),400,360); //yes, minus, because higher WPM is better
     return;
   }
-
+  
   drawWatch(); //draw watch background
   fill(100);
   rect(width/2-sizeOfInputArea/2, height/2-sizeOfInputArea/2, sizeOfInputArea, sizeOfInputArea); //input area should be 1" by 1"
-  drawKeyboard();
-  textFont(fontLarge);
+  
+
   if (startTime==0 & !mousePressed)
   {
     fill(128);
@@ -85,391 +151,154 @@ void draw()
 
   if (startTime!=0)
   {
-    //feel free to change the size and position of the target/entered phrases and next button
+    //feel free to change the size and position of the target/entered phrases and next button 
     textAlign(LEFT); //align the text left
+    textSize(24);
     fill(128);
     text("Phrase " + (currTrialNum+1) + " of " + totalTrialNum, 70, 50); //draw the trial count
     fill(128);
     text("Target:   " + currentPhrase, 70, 100); //draw the target string
-    text("Entered:  " + currentTyped +"|", 70, 140); //draw what the user has entered thus far
+    text("Entered:  " + currentTyped +"|", 70, 140); //draw what the user has entered thus far 
 
     //draw very basic next button
     fill(255, 0, 0);
     rect(1080, 520, 200, 200); //draw next button
     fill(255);
-    text("NEXT > ", 450, 650); //draw next label
-  }
-  fill(255, 40);
-  ellipse(mouseX, mouseY, 20, 20);
-  textAlign(CENTER);
-  fill(200);
-  text("" + currentTyped, width/2, height/2-sizeOfInputArea/3); //draw current letter
-  
-  
-  //drawFinger(); //no longer needed as we'll be deploying to an actual touschreen device
+    text("NEXT > ", 650, 650); //draw next label
 
-  if (isBackspacePressed && millis() - backspacePressedTime > longPressThreshold) {
-    int lastSpaceIndex = currentTyped.lastIndexOf(' ');
-    if (lastSpaceIndex != -1) {
-      currentTyped = currentTyped.substring(0, lastSpaceIndex + 1);
-    } else {
-      currentTyped = "";
+    textAlign(CENTER);
+    fill(200);
+    int colornum=255;
+
+    if(left){
+      keyboardLayout=keyboardLayoutLeft;
+    }else{
+      keyboardLayout=keyboardLayoutRight;
     }
-    isBackspacePressed = false;
+    for (int row = 0; row < keyboardLayout.length; row++) {
+      colornum-=30;
+      boolean on = true;
+    for (int col = 0; col < keyboardLayout[row].length; col++) {
+      if(on){
+        colornum+=15;
+        on=false;;
+      }else{
+        colornum-=15;
+        on=true;
+      }
+      float x = keyboardX + col * buttonWidth;
+      float y = keyboardY + row * buttonHeight;
+      
+      fill(colornum);
+      rect(x, y, buttonWidth, buttonHeight);
+      fill(0);
+      textSize(16);
+      text(keyboardLayout[row][col], x + buttonWidth / 2, y + buttonHeight / 2);
+    }
   }
+    
+    
+  }
+
+  // Draw the virtual keyboard
+  //fill(128);
+  textSize(14);
+  text(getPrediction(currentTyped), width/2, keyboardY-20);
+  
+  //End of draw function
+  
 }
 
-
-// Varaibles for keyboard drawing
-float keyboardWidth = sizeOfInputArea;
-float keyboardHeight = 3*sizeOfInputArea/4;
-float keyWidth = keyboardWidth / 10 -4;
-float keyHeight = keyboardHeight / 4 -4;
-char selectedKey = ' ';
-boolean isUpperCase = false;
-String[] keys = {"QWERASD", "TYFGH", "UIOPJKL", "ZXC", "VBNM", "^     <"};
-float keyMargin =sizeOfInputArea/30;
-float cornerRadius = 5;
-boolean isBackspacePressed = false;
-float backspacePressedTime = 0;
-float longPressThreshold = 600;
-
-// variable for floating rect
-char lastPressedKey = ' ';
-float lastPressedKeyX = 0;
-float lastPressedKeyY = 0;
-boolean isKeyPressed = false;
-int keySelected=0;
-void drawKeyboard() {
-  textFont(fontSmall);
-  float startX =width/2;
-  float startY =height/2-sizeOfInputArea/2+ sizeOfInputArea/4 ;
-  if (!isKeyPressed) {
-    fill(200);
-    // try to draw the first button
-    // first button xy
-    float buttonX = startX-keyboardWidth/2+keyMargin;
-    float buttonY = startY+keyMargin;
-    float buttonWidth = keyboardWidth/3;
-    float buttonHeight = keyboardHeight/3;
-    quad(buttonX, buttonY,
-      buttonX+buttonWidth, buttonY,
-      buttonX+buttonWidth-6, buttonY+buttonHeight,
-      buttonX+buttonWidth/4, buttonY+buttonHeight);
-    fill(0);
-    text(keys[0].substring(0, 4), buttonX+buttonWidth/2, buttonY+buttonHeight/2);
-    text(keys[0].substring(4, 7), buttonX+buttonWidth/2, buttonY+buttonHeight/2+15);
-
-    // second button
-    fill(200);
-    buttonX = startX-keyboardWidth/10;
-    buttonY = startY+keyMargin;
-    buttonWidth = keyboardWidth/3;
-    buttonHeight =  keyboardHeight/3;
-    quad(buttonX, buttonY,
-      buttonX+keyboardWidth/5, buttonY,
-      buttonX+keyboardWidth/5+10, buttonY+keyboardHeight/3,
-      buttonX-6, buttonY+keyboardHeight/3);
-    fill(0);
-    text(keys[1].substring(0, 2), startX, buttonY+buttonHeight/2);
-    text(keys[1].substring(2, 5), startX, buttonY+buttonHeight/2+15);
-
-    // third button
-    fill(200);
-    // try to draw the first button
-    // first button xy
-    buttonX = startX+keyboardWidth/2-keyMargin;
-    buttonY = startY+keyMargin;
-    buttonWidth = keyboardWidth/3;
-    buttonHeight = keyboardHeight/3;
-    quad(buttonX, buttonY,
-      buttonX-buttonWidth, buttonY,
-      buttonX-buttonWidth+10, buttonY+buttonHeight,
-      buttonX-buttonWidth/4, buttonY+buttonHeight);
-    fill(0);
-    text(keys[2].substring(0, 4), buttonX-buttonWidth/2, buttonY+buttonHeight/2);
-    text(keys[2].substring(4, 7), buttonX-buttonWidth/2, buttonY+buttonHeight/2+15);
-
-
-    // fourth button
-    fill(200);
-    buttonWidth = keyboardWidth/2;
-    buttonHeight = keyboardHeight/4;
-    buttonX = startX-buttonWidth+keyMargin;
-    buttonY = startY+keyboardHeight/3+2*keyMargin;
-    rect(buttonX, buttonY, buttonWidth-2*keyMargin, buttonHeight, cornerRadius);
-    fill(0);
-    text(keys[3], buttonX+buttonWidth/2, buttonY+buttonHeight/2);
-
-    // fifth button
-    fill(200);
-    buttonWidth = keyboardWidth/2;
-    buttonHeight = keyboardHeight/4;
-    buttonX = startX+keyMargin;
-    buttonY = startY+keyboardHeight/3+2*keyMargin;
-    rect(buttonX, buttonY, buttonWidth-2*keyMargin, buttonHeight, cornerRadius);
-    fill(0);
-    text(keys[4], buttonX+buttonWidth/2-keyMargin, buttonY+buttonHeight/2);
-    
-    //blankspace
-    fill(200);
-    rect(width/2-keyboardWidth/2+2*keyMargin+keyboardWidth/5,buttonY+2*keyboardHeight/5-2*keyMargin,2*keyboardWidth/5,buttonHeight,cornerRadius);
-    
-    //delete
-    rect(width/2+keyboardWidth/4+keyMargin,buttonY+2*keyboardHeight/5-2*keyMargin,keyboardWidth/6,buttonHeight,cornerRadius);
-    fill(0);
-    text("<",width/2+keyboardWidth/4+keyMargin+10,buttonY+6*keyboardHeight/10-3*keyMargin);
-  } else if (isKeyPressed && keySelected == 0) {
-    float keyWidth = keyboardWidth/5;
-    float keyHeight = keyboardWidth/5;
-    for (int i = 0; i<4; i++) {
-      fill(200);
-      rect(startX-keyboardWidth/2+i*(keyWidth+keyMargin)+2*keyMargin, height/2-keyHeight, keyWidth-keyMargin, keyHeight, cornerRadius);
-      fill(0);
-      text(keys[0].charAt(i), startX-keyboardWidth/2+i*(keyWidth+keyMargin)+keyMargin+keyWidth/2, height/2-keyHeight/2+keyMargin);
-    }
-    for (int i = 4; i<7; i++) {
-      fill(200);
-      rect(startX-keyboardWidth/2+keyWidth/2+(i-4)*(keyWidth+keyMargin)+2*keyMargin, height/2+keyHeight/2, keyWidth-keyMargin, keyHeight, cornerRadius);
-      fill(0);
-      text(keys[0].charAt(i), startX-keyboardWidth/2+(i-4)*(keyWidth+keyMargin)+keyMargin+keyWidth, height/2+keyHeight+keyMargin);
-    }
-  } else if (isKeyPressed && keySelected == 1) {
-    float keyWidth = keyboardWidth/5;
-    float keyHeight = keyboardWidth/5;
-    for (int i = 0; i<2; i++) {
-      fill(200);
-      rect(startX+i*(keyWidth+keyMargin)-keyWidth, height/2-keyHeight, keyWidth-keyMargin, keyHeight, cornerRadius);
-      fill(0);
-      text(keys[1].charAt(i), startX+i*(keyWidth+keyMargin)-keyWidth/2, height/2-keyHeight/2+keyMargin);
-    }
-    for (int i = 2; i<5; i++) {
-      fill(200);
-      rect(startX-keyboardWidth/2+keyWidth/2+(i-2)*(keyWidth+keyMargin)+2*keyMargin, height/2+keyHeight/2, keyWidth-keyMargin, keyHeight, cornerRadius);
-      fill(0);
-      text(keys[1].charAt(i), startX-keyboardWidth/2+(i-2)*(keyWidth+keyMargin)+keyMargin+keyWidth, height/2+keyHeight+keyMargin);
-    }
-  } else if (isKeyPressed && keySelected == 2) {
-    float keyWidth = keyboardWidth/5;
-    float keyHeight = keyboardWidth/5;
-    for (int i = 0; i<4; i++) {
-      fill(200);
-      rect(startX-keyboardWidth/2+i*(keyWidth+keyMargin)+2*keyMargin, height/2-keyHeight, keyWidth-keyMargin, keyHeight, cornerRadius);
-      fill(0);
-      text(keys[2].charAt(i), startX-keyboardWidth/2+i*(keyWidth+keyMargin)+keyMargin+keyWidth/2, height/2-keyHeight/2+keyMargin);
-    }
-    for (int i = 4; i<7; i++) {
-      fill(200);
-      rect(startX-keyboardWidth/2+keyWidth/2+(i-4)*(keyWidth+keyMargin)+2*keyMargin, height/2+keyHeight/2, keyWidth-keyMargin, keyHeight, cornerRadius);
-      fill(0);
-      text(keys[2].charAt(i), startX-keyboardWidth/2+(i-4)*(keyWidth+keyMargin)+keyMargin+keyWidth, height/2+keyHeight+keyMargin);
-    }
-  } else if (isKeyPressed && keySelected == 3) {
-    float keyWidth = keyboardWidth/5;
-    float keyHeight = keyboardWidth/5;
-    for (int i = 0; i<3; i++) {
-      fill(200);
-      rect(startX-keyboardWidth/2+i*(keyWidth+keyMargin)+2*keyMargin, height/2+keyHeight/2, keyWidth-keyMargin, keyHeight, cornerRadius);
-      fill(0);
-      text(keys[3].charAt(i), startX-keyboardWidth/2+i*(keyWidth+keyMargin)+keyMargin+keyWidth/2, height/2+keyHeight+keyMargin);
-    }
-  } else if (isKeyPressed && keySelected == 4) {
-    float keyWidth = keyboardWidth/5;
-    float keyHeight = keyboardWidth/5;
-    for (int i = 0; i<4; i++) {
-      fill(200);
-      rect(startX-keyboardWidth/2+i*(keyWidth+keyMargin)+2*keyMargin, height/2+keyHeight/2, keyWidth-keyMargin, keyHeight, cornerRadius);
-      fill(0);
-      text(keys[4].charAt(i), startX-keyboardWidth/2+i*(keyWidth+keyMargin)+keyMargin+keyWidth/2, height/2+keyHeight+keyMargin);
-    }
-  }
-}
 //my terrible implementation you can entirely replace
 boolean didMouseClick(float x, float y, float w, float h) //simple function to do hit testing
 {
   return (mouseX > x && mouseX<x+w && mouseY>y && mouseY<y+h); //check to see if it is in button bounds
 }
-int page = 0;
-//my terrible implementation you can entirely replace
+float initialTouchX;
+float initialTouchY;
+
 void mousePressed()
 {
-  // keyboard
-  float startX = width / 2;
-  float startY = height / 2 - sizeOfInputArea / 2 + sizeOfInputArea / 4;
-  float keyWidth = keyboardWidth / 5;
-  float keyHeight = keyboardWidth / 5;
-  if (!isKeyPressed) {
-    // 计算第一、二、三个按钮的位置和大小
-    float commonButtonWidth = keyboardWidth / 3;
-    float commonButtonHeight = keyboardHeight / 3;
-    float commonButtonX = startX - keyboardWidth / 2 + keyMargin;
-    float commonButtonY = startY + keyMargin;
-
-    // 检查是否点击了第一、二、三个按钮
-    for (int i = 0; i < 3; i++) {
-        if (mouseX >= commonButtonX + i * commonButtonWidth && mouseX <= commonButtonX + (i + 1) * commonButtonWidth &&
-            mouseY >= commonButtonY && mouseY <= commonButtonY + commonButtonHeight) {
-            keySelected = i;
-            isKeyPressed = true;
-            page = 1;
-            break;
-        }
-    }
-
-    // 计算第四、五个按钮的位置和大小
-    float specialButtonWidth = keyboardWidth / 2;
-    float specialButtonHeight = keyboardHeight / 4;
-    float specialButtonY = startY + keyboardHeight / 3 + 2 * keyMargin;
-
-    // 检查是否点击了第四、五个按钮
-    for (int i = 0; i < 2; i++) {
-        float specialButtonX = startX - keyboardWidth / 2 + i * specialButtonWidth + keyMargin;
-        if (mouseX >= specialButtonX && mouseX <= specialButtonX + specialButtonWidth &&
-            mouseY >= specialButtonY && mouseY <= specialButtonY + specialButtonHeight) {
-            keySelected = 3 + i;
-            isKeyPressed = true;
-            break;
-        }
-    }
-   // 空格键的位置和大小
-    float spaceKeyX = width / 2 - keyboardWidth / 2 + 2 * keyMargin + keyboardWidth / 5;
-    float spaceKeyY = specialButtonY + 2 * keyboardHeight / 5 - 2 * keyMargin;
-    float spaceKeyWidth = 2 * keyboardWidth / 5;
-    float spaceKeyHeight = specialButtonHeight;
-
-    // 删除键的位置和大小
-    float deleteKeyX = width / 2 + keyboardWidth / 4 + keyMargin;
-    float deleteKeyY = specialButtonY + 2 * keyboardHeight / 5 - 2 * keyMargin;
-    float deleteKeyWidth = keyboardWidth / 6;
-    float deleteKeyHeight = specialButtonHeight;
-
-    // 检查是否点击了空格键
-    if (mouseX >= spaceKeyX && mouseX <= spaceKeyX + spaceKeyWidth &&
-        mouseY >= spaceKeyY && mouseY <= spaceKeyY + spaceKeyHeight) {
-        currentTyped += " ";
-    }
-
-    // 检查是否点击了删除键
-    if (mouseX >= deleteKeyX && mouseX <= deleteKeyX + deleteKeyWidth &&
-        mouseY >= deleteKeyY && mouseY <= deleteKeyY + deleteKeyHeight) {
-        if (currentTyped.length() > 0) {
-            currentTyped = currentTyped.substring(0, currentTyped.length() - 1);
-        }
-    }
-    if (isKeyPressed) {
-            return; // 阻止进一步的处理，直到下次点击
-        }
-  }
-  if (isKeyPressed) {
-    if (mouseX >= startX-keyboardWidth/2 && mouseX <= startX+keyboardWidth/2 && mouseY >= startY +sizeOfInputArea/2+10 && mouseY <= startY +3*sizeOfInputArea/4) {
-      isKeyPressed = false;
-    }
-    if (keySelected == 0) {
-      for (int i = 0; i < 4; i++) {
-        float keyX = startX - keyboardWidth / 2 + i * (keyWidth + keyMargin) + 2 * keyMargin;
-        float keyY = height / 2 - keyHeight;
-        if (mouseX >= keyX && mouseX <= keyX + keyWidth - keyMargin && mouseY >= keyY && mouseY <= keyY + keyHeight) {
-          // 处理第一行按钮的点击
-          char selectedChar = keys[0].charAt(i);
-          selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
-          currentTyped += selectedChar;
-          
-        }
-      }
-      for (int i = 4; i < 7; i++) {
-        float keyX = startX - keyboardWidth / 2 + keyWidth / 2 + (i - 4) * (keyWidth + keyMargin) + 2 * keyMargin;
-        float keyY = height / 2 + keyHeight / 2;
-        if (mouseX >= keyX && mouseX <= keyX + keyWidth - keyMargin && mouseY >= keyY && mouseY <= keyY + keyHeight) {
-          char selectedChar = keys[0].charAt(i);
-          selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
-          currentTyped += selectedChar;
-        }
-      }
-    }
-    if ( isKeyPressed&&keySelected == 1) {
-      for (int i = 0; i < 2; i++) {
-        float keyX = startX + i * (keyWidth + keyMargin) - keyWidth;
-        float keyY = height / 2 - keyHeight;
-        if (mouseX >= keyX && mouseX <= keyX + keyWidth - keyMargin && mouseY >= keyY && mouseY <= keyY + keyHeight) {
-          char selectedChar = keys[1].charAt(i);
-          selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
-          currentTyped += selectedChar;
-          
-        }
-      }
-      for (int i = 2; i < 5; i++) {
-        float keyX = startX - keyboardWidth / 2 + keyWidth / 2 + (i - 2) * (keyWidth + keyMargin) + 2 * keyMargin;
-        float keyY = height / 2 + keyHeight / 2;
-        if (mouseX >= keyX && mouseX <= keyX + keyWidth - keyMargin && mouseY >= keyY && mouseY <= keyY + keyHeight) {
-          char selectedChar = keys[1].charAt(i);
-          selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
-          currentTyped += selectedChar;
-          
-        }
-      }
-    }
-    if (keySelected == 2) {
-      for (int i = 0; i < 4; i++) {
-        float keyX = startX - keyboardWidth / 2 + i * (keyWidth + keyMargin) + 2 * keyMargin;
-        float keyY = height / 2 - keyHeight;
-        if (mouseX >= keyX && mouseX <= keyX + keyWidth - keyMargin && mouseY >= keyY && mouseY <= keyY + keyHeight) {
-          char selectedChar = keys[2].charAt(i);
-          selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
-          currentTyped += selectedChar;
-          
-        }
-      }
-      for (int i = 4; i < 7; i++) {
-        float keyX = startX - keyboardWidth / 2 + keyWidth / 2 + (i - 4) * (keyWidth + keyMargin) + 2 * keyMargin;
-        float keyY = height / 2 + keyHeight / 2;
-        if (mouseX >= keyX && mouseX <= keyX + keyWidth - keyMargin && mouseY >= keyY && mouseY <= keyY + keyHeight) {
-          char selectedChar = keys[2].charAt(i);
-          selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
-          currentTyped += selectedChar;
-          
-        }
-      }
-    }
-    if (keySelected == 3) {
-      for (int i = 0; i < keys[3].length(); i++) {
-        float keyX = startX - keyboardWidth / 2 + i * (keyWidth + keyMargin) + 2 * keyMargin;
-        float keyY = height / 2 + keyHeight / 2;
-        if (mouseX >= keyX && mouseX <= keyX + keyWidth - keyMargin  && mouseY >= keyY && mouseY <= keyY + keyHeight) {
-          char selectedChar = keys[3].charAt(i);
-          selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
-          currentTyped += selectedChar;
-          
-        }
-      }
-    }
-    if (keySelected == 4) {
-      for (int i = 0; i < keys[4].length(); i++) {
-        float keyX = startX - keyboardWidth / 2 + i * (keyWidth + keyMargin) + 2 * keyMargin;
-        float keyY = height / 2 + keyHeight / 2;
-
-        if (mouseX >= keyX && mouseX <= keyX + keyWidth - keyMargin && mouseY >= keyY && mouseY <= keyY + keyHeight) {
-          char selectedChar = keys[4].charAt(i);
-          selectedChar = isUpperCase ? Character.toUpperCase(selectedChar) : Character.toLowerCase(selectedChar);
-          currentTyped += selectedChar;
-          
-        }
-      }
-    }
- }
- 
-
-
-
+  initialTouchX = mouseX;
+  initialTouchY = mouseY;
   //You are allowed to have a next button outside the 1" area
   if (didMouseClick(1080, 520, 200, 200)) //check if click is in next button
   {
     nextTrial(); //if so, advance to next trial
   }
-}
-void mouseReleased() {
-  isBackspacePressed = false;
+  
+  if(left){
+      keyboardLayout=keyboardLayoutLeft;
+    }else{
+      keyboardLayout=keyboardLayoutRight;
+    }
+  
+  int row = int((mouseY - keyboardY) / buttonHeight);
+  int col = int((mouseX - keyboardX) / buttonWidth);
+  
+  
+  if (row >= 0 && row < keyboardLayout.length && col >= 0 && col < keyboardLayout[row].length) {
+    
+    if(keyboardLayout[row][col]=="<"){
+    left=true;
+   
+  }else if(keyboardLayout[row][col]==">"){
+    left=false;
+  }else if(keyboardLayout[row][col]=="X"){
+    if(currentTyped.length()!=0){
+    currentTyped=currentTyped.substring(0,currentTyped.length()-1);
+    }
+  }else if(keyboardLayout[row][col]==" "){
+    String prediction = getWordPrediction();
+        if (!prediction.isEmpty()) {
+            String[] typedWords = currentTyped.split(" ");
+            if (typedWords.length > 0) {
+                String lastTypedWord = typedWords[typedWords.length - 1];
+                int commonLength = commonPrefixLength(lastTypedWord, prediction);
+                String remaining = prediction.substring(commonLength);
+                currentTyped += remaining + " ";
+            } else {
+                currentTyped += prediction + " ";
+            }
+        }
+  }else if(keyboardLayout[row][col]=="_"){
+    currentTyped+=' ';
+  }else{
+    currentTyped+=keyboardLayout[row][col].toLowerCase();
+  }
+  }
+  
 }
 
+int commonPrefixLength(String str1, String str2) {
+    int minLength = Math.min(str1.length(), str2.length());
+    int commonLength = 0;
+
+    for (int i = 0; i < minLength; i++) {
+        if (str1.charAt(i) == str2.charAt(i)) {
+            commonLength++;
+        } else {
+            break;
+        }
+    }
+
+    return commonLength;
+}
+
+void mouseReleased() {
+  float deltaX = mouseX - initialTouchX; // Calculate the change in X position
+  float deltaY = mouseY - initialTouchY; // Calculate the change in Y position
+
+  // Check for a horizontal swipe with minimal vertical movement
+  if (abs(deltaY) < 30) { // Adjust this value as needed for vertical sensitivity
+    if (deltaX < -50) { // Left swipe
+      left = true;
+    } else if (deltaX > 50) { // Right swipe
+      left = false;
+    }
+  }
+
+}
 void nextTrial()
 {
   if (currTrialNum >= totalTrialNum) //check to see if experiment is done
@@ -506,7 +335,7 @@ void nextTrial()
     float wpm = (lettersEnteredTotal/5.0f)/((finishTime - startTime)/60000f); //FYI - 60K is number of milliseconds in minute
     float freebieErrors = lettersExpectedTotal*.05; //no penalty if errors are under 5% of chars
     float penalty = max(errorsTotal-freebieErrors, 0) * .5f;
-
+    
     System.out.println("Raw WPM: " + wpm); //output
     System.out.println("Freebie errors: " + freebieErrors); //output
     System.out.println("Penalty: " + penalty);
@@ -521,7 +350,8 @@ void nextTrial()
   {
     System.out.println("Trials beginning! Starting timer..."); //output we're done
     startTime = millis(); //start the timer!
-  } else
+  } 
+  else
     currTrialNum++; //increment trial number
 
   lastTime = millis(); //record the time of when this trial ended
@@ -538,7 +368,7 @@ void drawWatch()
   translate(width/2, height/2);
   scale(watchscale);
   imageMode(CENTER);
-  //image(watch, 0, 0);
+  image(watch, 0, 0);
   popMatrix();
 }
 
@@ -550,16 +380,16 @@ void drawFinger()
   translate(mouseX, mouseY);
   scale(fingerscale);
   imageMode(CENTER);
-  image(finger, 52, 341);
+  image(finger,52,341);
   if (mousePressed)
-    fill(0);
+     fill(0);
   else
-    fill(255);
-  ellipse(0, 0, 5, 5);
+     fill(255);
+  ellipse(0,0,5,5);
 
   popMatrix();
-}
-
+  }
+  
 
 //=========SHOULD NOT NEED TO TOUCH THIS METHOD AT ALL!==============
 int computeLevenshteinDistance(String phrase1, String phrase2) //this computers error between two strings
