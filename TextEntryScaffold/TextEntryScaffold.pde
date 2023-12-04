@@ -14,7 +14,7 @@ float errorsTotal = 0; //a running total of the number of errors (when hitting n
 String currentPhrase = ""; //the current target phrase
 String currentTyped = ""; //what the user has typed so far
 final float DPIofYourDeviceScreen =222.5; //you will need to look up the DPI or PPI of your device to make sure you get the right scale. Or play around with this value.
-final float sizeOfInputArea = DPIofYourDeviceScreen; //aka, 1.0 inches square!
+final float sizeOfInputArea = DPIofYourDeviceScreen*1.1; //aka, 1.0 inches square!
 PImage watch;
 PImage finger;
 PFont fontSmall;
@@ -29,6 +29,7 @@ char currentLetter = 'a';
 //You can modify anything in here. This is just a basic implementation.
 void setup()
 {
+  frameRate(90);
   fontSmall = createFont("Arial", 9);
   fontLarge = createFont("Arial", 16);
   //noCursor();
